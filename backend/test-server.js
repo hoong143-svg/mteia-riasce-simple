@@ -4,7 +4,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.get('/', (req, res) => {
-  res.send('Hello from MTEIA RIASEC!');
+  res.send('Hello from MTEIA RIASEC! ' + new Date().toISOString());
 });
 
 app.get('/health', (req, res) => {
