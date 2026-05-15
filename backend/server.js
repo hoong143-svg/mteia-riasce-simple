@@ -4,10 +4,22 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import db from './db.js';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { existsSync } from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'mteia-secret-key-2024';
+
+// Serve frontend static files (built with `npm run build`)
+const distPath = join(__dirname, '..', 'frontend', 'dist');
+if (existsSync(distPath)) {
+  app.use(express.static(distPath));
+}
 
 app.use(cors());
 app.use(express.json());
@@ -193,13 +205,16 @@ app.post('/api/results', (req, res) => {
   
   // Determine recommended field
   const fieldMap = {
-    R: '工程、農業、機械、餐飲',
-    I: '數理化、生命科學、資訊',
-    A: '藝術、設計、語文',
-    S: '社會心理、教育、醫藥衛生',
-    E: '管理、財經、法政',
-    C: '行政、圖書資訊、遊憩運動'
+    R: { zh: '工程、農業、機械、餐飲', en: 'Engineering, Agriculture, Mechanics, Culinary' },
+    I: { zh: '數理化、生命科學、資訊', en: 'Science, Mathematics, IT, Life Sciences' },
+    A: { zh: '藝術、設計、語文', en: 'Arts, Design, Languages' },
+    S: { zh: '社會心理、教育、醫藥衛生', en: 'Social Work, Education, Healthcare' },
+    E: { zh: '管理、財經、法政', en: 'Business, Finance, Law, Administration' },
+    C: { zh: '行政、圖書資訊、遊憩運動', en: 'Administration, Library, Recreation' }
   };
+
+  const lang = req.body.lang || 'zh';
+  const getField = (type) => fieldMap[type]?.[lang] || fieldMap[type]?.zh || fieldMap[type];
   
   const studentId = uuidv4();
   const sessionId = uuidv4();
@@ -212,7 +227,7 @@ app.post('/api/results', (req, res) => {
   // Insert result
   const resultId = uuidv4();
   db.prepare('INSERT INTO results (id, student_id, scores, recommended_field) VALUES (?, ?, ?, ?)').run(
-    resultId, studentId, JSON.stringify(averages), fieldMap[maxType]
+    resultId, studentId, JSON.stringify(averages), getField(maxType)
   );
   
   // Insert answers
@@ -225,7 +240,7 @@ app.post('/api/results', (req, res) => {
     student_id: studentId,
     session_id: sessionId,
     scores: averages,
-    recommended_field: fieldMap[maxType],
+    recommended_field: getField(maxType),
     result_id: resultId
   });
 });
@@ -347,6 +362,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// SPA fallback - serve index.html for all non-API routes
+// This must be after all API routes
+if (existsSync(distPath)) {
+  app.get('*', (req, res) => {
+    res.sendFile(join(distPath, 'index.html'));
+  });
+}
+
 app.listen(PORT, () => {
-  console.log(`MTEIA RIASEC Backend running on http://localhost:${PORT}`);
+  console.log(`🚀 MTEIA RIASEC Server running on http://localhost:${PORT}`);
+  console.log(`📱 Open in browser: http://YOUR_IP:${PORT}`);
 });

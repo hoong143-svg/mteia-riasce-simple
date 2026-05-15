@@ -1,36 +1,47 @@
 import { Link } from 'react-router-dom'
+import { useLang } from '../i18n'
 
 export default function Home() {
+  const { t, lang, setLang } = useLang()
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">M</span>
-            </div>
+            <img src="/logo.png" alt="MTEIA" className="w-10 h-10 object-contain" />
             <div>
-              <h1 className="text-xl font-bold text-gray-800">MTEIA</h1>
-              <p className="text-xs text-gray-500">升學輔導測驗系統</p>
+              <h1 className="text-xl font-bold text-gray-800">{t('home.title')}</h1>
+              <p className="text-xs text-gray-500">{t('home.subtitle')}</p>
             </div>
           </div>
-          <Link 
-            to="/login" 
-            className="px-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition"
-          >
-            輔導員登入
-          </Link>
+          <div className="flex items-center gap-2">
+            <select 
+              value={lang} 
+              onChange={(e) => setLang(e.target.value)}
+              className="px-2 py-1 border rounded text-sm"
+            >
+              <option value="zh-TW">繁體</option>
+              <option value="en">EN</option>
+            </select>
+            <Link 
+              to="/login" 
+              className="px-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition"
+            >
+              {t('home.counselorLogin')}
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* Hero */}
       <main className="max-w-4xl mx-auto px-4 py-16 text-center">
         <h2 className="text-4xl font-bold text-gray-800 mb-4">
-          探索你的職業興趣
+          {t('home.heroTitle')}
         </h2>
         <p className="text-xl text-gray-600 mb-8">
-          透過專業的 RIASEC 職業興趣測驗，了解自己的興趣取向，找到適合的升學方向
+          {t('home.heroDesc')}
         </p>
         
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
@@ -39,43 +50,43 @@ export default function Home() {
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">🔧</span>
               </div>
-              <h3 className="font-semibold text-gray-800">實用型 R</h3>
-              <p className="text-sm text-gray-500">喜歡實際操作</p>
+              <h3 className="font-semibold text-gray-800">{t('types.R.name')}</h3>
+              <p className="text-sm text-gray-500">{t('types.R.desc')}</p>
             </div>
             <div className="text-center p-4">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">🔬</span>
               </div>
-              <h3 className="font-semibold text-gray-800">研究型 I</h3>
-              <p className="text-sm text-gray-500">喜歡研究思考</p>
+              <h3 className="font-semibold text-gray-800">{t('types.I.name')}</h3>
+              <p className="text-sm text-gray-500">{t('types.I.desc')}</p>
             </div>
             <div className="text-center p-4">
               <div className="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">🎨</span>
               </div>
-              <h3 className="font-semibold text-gray-800">藝術型 A</h3>
-              <p className="text-sm text-gray-500">喜歡創意表達</p>
+              <h3 className="font-semibold text-gray-800">{t('types.A.name')}</h3>
+              <p className="text-sm text-gray-500">{t('types.A.desc')}</p>
             </div>
             <div className="text-center p-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">🤝</span>
               </div>
-              <h3 className="font-semibold text-gray-800">社會型 S</h3>
-              <p className="text-sm text-gray-500">喜歡幫助他人</p>
+              <h3 className="font-semibold text-gray-800">{t('types.S.name')}</h3>
+              <p className="text-sm text-gray-500">{t('types.S.desc')}</p>
             </div>
             <div className="text-center p-4">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">💼</span>
               </div>
-              <h3 className="font-semibold text-gray-800">企業型 E</h3>
-              <p className="text-sm text-gray-500">喜歡領導影響</p>
+              <h3 className="font-semibold text-gray-800">{t('types.E.name')}</h3>
+              <p className="text-sm text-gray-500">{t('types.E.desc')}</p>
             </div>
             <div className="text-center p-4">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">📋</span>
               </div>
-              <h3 className="font-semibold text-gray-800">事務型 C</h3>
-              <p className="text-sm text-gray-500">喜歡規矩精確</p>
+              <h3 className="font-semibold text-gray-800">{t('types.C.name')}</h3>
+              <p className="text-sm text-gray-500">{t('types.C.desc')}</p>
             </div>
           </div>
 
@@ -83,19 +94,19 @@ export default function Home() {
             to="/quiz"
             className="inline-block px-8 py-4 bg-blue-600 text-white font-semibold text-lg rounded-xl hover:bg-blue-700 transition shadow-lg hover:shadow-xl"
           >
-            開始測驗
+            {t('home.startQuiz')}
           </Link>
         </div>
 
         <div className="text-gray-500 text-sm">
-          <p>測驗約需 10-15 分鐘，共 40 題</p>
-          <p className="mt-1">基於 Holland 職業興趣理論 (RIASEC)</p>
+          <p>{t('home.quizDuration')}</p>
+          <p className="mt-1">{t('home.basedOn')}</p>
         </div>
       </main>
 
       {/* Footer */}
       <footer className="text-center text-gray-400 text-sm py-8">
-        MTEIA 升學輔導系統 © 2024
+        {t('home.footer')}
       </footer>
     </div>
   )

@@ -29,9 +29,11 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-2xl">M</span>
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="MTEIA Logo" 
+            className="w-24 h-24 mx-auto mb-4 object-contain"
+          />
           <h1 className="text-2xl font-bold text-gray-800">輔導員登入</h1>
           <p className="text-gray-500 mt-2">MTEIA 升學輔導系統</p>
         </div>
@@ -73,10 +75,6 @@ export default function Login() {
             {loading ? '登入中...' : '登入'}
           </button>
         </form>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          預設帳號：admin@mteia.org / admin123
-        </p>
       </div>
     </div>
   )

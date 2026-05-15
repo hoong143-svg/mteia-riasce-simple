@@ -1,9 +1,37 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useLang } from '../i18n'
+
+const typeLabels = {
+  R: '實用型', I: '研究型', A: '藝術型',
+  S: '社會型', E: '企業型', C: '事務型'
+}
+
+const typeColors = {
+  R: 'bg-red-100 text-red-700',
+  I: 'bg-purple-100 text-purple-700',
+  A: 'bg-pink-100 text-pink-700',
+  S: 'bg-green-100 text-green-700',
+  E: 'bg-yellow-100 text-yellow-700',
+  C: 'bg-blue-100 text-blue-700'
+}
+
+const scoreLabels = [
+  { value: 5, zh: '非常喜歡', en: 'Strongly Like' },
+  { value: 4, zh: '喜歡', en: 'Like' },
+  { value: 3, zh: '普通', en: 'Neutral' },
+  { value: 2, zh: '不太喜歡', en: 'Dislike' },
+  { value: 1, zh: '非常不喜歡', en: 'Strongly Dislike' }
+]
+
+const gradeOptions = {
+  'zh-TW': ['初一', '初二', '初三', '高一', '高二', '高三', '其他'],
+  en: ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12', 'Other']
+}
 
 export default function Quiz() {
-  const [step, setStep] = useState('info') // info -> quiz -> done
+  const { t, lang } = useLang()
+  const [step, setStep] = useState('info')
   const [formData, setFormData] = useState({ name: '', school: '', grade: '' })
   const [questions, setQuestions] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -12,6 +40,11 @@ export default function Quiz() {
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
+  const getScoreLabel = (score) => {
+    const s = scoreLabels.find(x => x.value === score)
+    return lang === 'en' ? s.en : s.zh
+  }
+
   const fetchQuestions = async () => {
     setLoading(true)
     try {
@@ -19,7 +52,7 @@ export default function Quiz() {
       const data = await res.json()
       setQuestions(data)
       setStep('quiz')
-    } catch (err) {
+    } catch {
       setError('載入題目失敗，請稍後再試')
     } finally {
       setLoading(false)
@@ -28,7 +61,7 @@ export default function Quiz() {
 
   const handleStart = () => {
     if (!formData.name.trim()) {
-      setError('請輸入姓名')
+      setError(lang === 'en' ? 'Please enter your name' : '請輸入姓名')
       return
     }
     setError('')
@@ -58,7 +91,10 @@ export default function Quiz() {
     }))
 
     if (answersArray.length < questions.length) {
-      setError(`請回答所有題目（${answersArray.length}/${questions.length}）`)
+      setError(lang === 'en' 
+        ? `Please answer all questions (${answersArray.length}/${questions.length})`
+        : `請回答所有題目（${answersArray.length}/${questions.length}）`
+      )
       return
     }
 
@@ -73,7 +109,8 @@ export default function Quiz() {
           name: formData.name,
           school: formData.school,
           grade: formData.grade,
-          scores: answersArray
+          scores: answersArray,
+          lang: lang
         })
       })
 
@@ -97,7 +134,7 @@ export default function Quiz() {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-800">RIASEC 職業興趣測驗</h1>
+          <h1 className="text-lg font-semibold text-gray-800">{t('quiz.title')}</h1>
           <span className="text-sm text-gray-500">{currentIndex + 1} / {questions.length || '...'}</span>
         </div>
         {step === 'quiz' && questions.length > 0 && (
@@ -113,44 +150,40 @@ export default function Quiz() {
       <main className="max-w-3xl mx-auto px-4 py-8">
         {step === 'info' && (
           <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">基本資料</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">{t('quiz.title')}</h2>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">姓名 *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('quiz.name')} *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="請輸入姓名"
+                  placeholder={t('quiz.namePlaceholder')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">學校/輔導室</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('quiz.school')}</label>
                 <input
                   type="text"
                   value={formData.school}
                   onChange={e => setFormData({ ...formData, school: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="選填"
+                  placeholder={t('quiz.schoolPlaceholder')}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">年級</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('quiz.grade')}</label>
                 <select
                   value={formData.grade}
                   onChange={e => setFormData({ ...formData, grade: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">選填</option>
-                  <option value="國一">國一</option>
-                  <option value="國二">國二</option>
-                  <option value="國三">國三</option>
-                  <option value="高一">高一</option>
-                  <option value="高二">高二</option>
-                  <option value="高三">高三</option>
-                  <option value="其他">其他</option>
+                  <option value="">{t('quiz.gradePlaceholder')}</option>
+                  {gradeOptions[lang].map(g => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -162,7 +195,7 @@ export default function Quiz() {
               disabled={loading}
               className="w-full mt-6 px-6 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
             >
-              {loading ? '載入中...' : '開始測驗'}
+              {loading ? t('quiz.submitting') : t('home.startQuiz')}
             </button>
           </div>
         )}
@@ -170,24 +203,12 @@ export default function Quiz() {
         {step === 'quiz' && currentQ && (
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="mb-6">
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium
-                ${currentQ.type === 'R' ? 'bg-red-100 text-red-700' :
-                  currentQ.type === 'I' ? 'bg-purple-100 text-purple-700' :
-                  currentQ.type === 'A' ? 'bg-pink-100 text-pink-700' :
-                  currentQ.type === 'S' ? 'bg-green-100 text-green-700' :
-                  currentQ.type === 'E' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-blue-100 text-blue-700'
-                }`}>
-                {currentQ.type === 'R' && '實用型'}
-                {currentQ.type === 'I' && '研究型'}
-                {currentQ.type === 'A' && '藝術型'}
-                {currentQ.type === 'S' && '社會型'}
-                {currentQ.type === 'E' && '企業型'}
-                {currentQ.type === 'C' && '事務型'}
+              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${typeColors[currentQ.type]}`}>
+                {t('types.' + currentQ.type + '.name')}
               </span>
             </div>
 
-            <h3 className="text-xl font-medium text-gray-800 mb-8">{currentQ.question_text}</h3>
+            <h3 className="text-xl font-medium text-gray-800 mb-8">{lang === 'en' ? currentQ.question_text : currentQ.question_text_zh}</h3>
 
             <div className="space-y-3">
               {[5, 4, 3, 2, 1].map(score => (
@@ -201,19 +222,9 @@ export default function Quiz() {
                     }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-700">
-                      {score === 5 && '非常喜歡'}
-                      {score === 4 && '喜歡'}
-                      {score === 3 && '普通'}
-                      {score === 2 && '不太喜歡'}
-                      {score === 1 && '非常不喜歡'}
-                    </span>
+                    <span className="text-gray-700">{getScoreLabel(score)}</span>
                     <span className={`text-lg ${answers[currentQ.id] === score ? 'text-blue-600' : 'text-gray-300'}`}>
-                      {score === 5 && '★★★★★'}
-                      {score === 4 && '★★★★☆'}
-                      {score === 3 && '★★★☆☆'}
-                      {score === 2 && '★★☆☆☆'}
-                      {score === 1 && '★☆☆☆☆'}
+                      {'★'.repeat(score)}{'☆'.repeat(5 - score)}
                     </span>
                   </div>
                 </button>
@@ -228,7 +239,7 @@ export default function Quiz() {
                 disabled={currentIndex === 0}
                 className="px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50"
               >
-                上一題
+                {t('quiz.prev')}
               </button>
               
               {currentIndex === questions.length - 1 ? (
@@ -237,20 +248,20 @@ export default function Quiz() {
                   disabled={loading}
                   className="px-8 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50"
                 >
-                  {loading ? '提交中...' : '完成測驗'}
+                  {loading ? t('quiz.submitting') : t('quiz.submit')}
                 </button>
               ) : (
                 <button
                   onClick={handleNext}
                   className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700"
                 >
-                  下一題
+                  {t('quiz.next')}
                 </button>
               )}
             </div>
 
             <div className="mt-6 text-center text-sm text-gray-500">
-              已回答：{answeredCount} / {questions.length}
+              {lang === 'en' ? `Answered: ${answeredCount} / ${questions.length}` : `已回答：${answeredCount} / ${questions.length}`}
             </div>
           </div>
         )}
