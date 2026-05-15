@@ -1,0 +1,10 @@
+{
+  "$schema": "https://railway.app/railway.json",
+  "build": {
+    "buildCommand": "npm install",
+    "output": "backend"
+  },
+  "start": {
+    "command": "node backend/test-server.js"
+  }
+}
