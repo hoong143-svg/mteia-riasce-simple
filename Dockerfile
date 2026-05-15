@@ -14,8 +14,8 @@ COPY . .
 # 安装依赖
 RUN npm install
 
-# 构建前端（如果需要）
-# RUN npm run build
+# 设置 PORT 环境变量
+ENV PORT=3001
 
 EXPOSE 3001
 
