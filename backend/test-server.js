@@ -7,6 +7,10 @@ app.get('/', (req, res) => {
   res.send('Hello from MTEIA RIASEC!');
 });
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.get('/api/test', (req, res) => {
   res.json({ status: 'ok', message: 'Server is working!' });
 });
