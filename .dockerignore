@@ -1,0 +1,7 @@
+.git
+.gitignore
+node_modules
+*.md
+*.zip
+start.sh
+SPEC.md
