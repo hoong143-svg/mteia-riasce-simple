@@ -3,7 +3,8 @@
   "build": {
     "buildCommand": "npm install"
   },
-  "start": {
-    "command": "node backend/test-server.js"
-  }
+  "deploy": {
+    "numReplicas": 1
+  },
+  "start": "node backend/test-server.js"
 }
