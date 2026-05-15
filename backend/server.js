@@ -13,6 +13,9 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Railway sets PORT automatically
+console.log('PORT:', PORT);
 const JWT_SECRET = process.env.JWT_SECRET || 'mteia-secret-key-2024';
 
 // Serve frontend static files (built with `npm run build`)
