@@ -8,16 +8,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# 复制所有源代码
-COPY . .
+# 复制 package.json 和 package-lock.json
+COPY package.json package-lock.json* ./
 
-# 安装依赖
+# 先安装依赖
 RUN npm install
+
+# 复制源代码
+COPY . .
 
 # 设置 PORT 环境变量
 ENV PORT=3001
 
 EXPOSE 3001
 
-# 先用测试服务器
 CMD ["node", "backend/test-server.js"]
