@@ -1,7 +1,7 @@
 # 使用官方 Node.js 镜像
 FROM node:18-slim
 
-# 安装 build-essential 用于编译 native modules（如果有的话）
+# 安装 build-essential
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
@@ -19,4 +19,5 @@ ENV PORT=3001
 
 EXPOSE 3001
 
-CMD ["node", "backend/server.js"]
+# 先用测试服务器
+CMD ["node", "backend/test-server.js"]
