@@ -2,10 +2,8 @@
   "$schema": "https://railway.app/railway.json",
   "build": {
     "builder": "NIXPACKS_VITE_NODE",
-    "buildCommand": "cd backend && npm install && cd ../frontend && npm install && npm run build",
-    "output": "backend"
+    "buildCommand": "cd backend && npm install && cd ../frontend && npm install && npm run build"
   },
-  "start": "node backend/server.js",
   "deploy": {
     "numReplicas": 1,
     "restartPolicyType": "ON_FAILURE",
