@@ -3,29 +3,175 @@ import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import db from './db.js';
+import initSqlJs from 'sql.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { existsSync } from 'fs';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-
-// Railway sets PORT automatically
-console.log('PORT:', PORT);
 const JWT_SECRET = process.env.JWT_SECRET || 'mteia-secret-key-2024';
 
-// Serve frontend static files (built with `npm run build`)
+console.log('🚀 Starting MTEIA RIASEC Server...');
+console.log('PORT:', PORT);
+
+// Serve frontend static files
 const distPath = join(__dirname, '..', 'frontend', 'dist');
-if (existsSync(distPath)) {
+if (fs.existsSync(distPath)) {
+  console.log('Serving frontend from:', distPath);
   app.use(express.static(distPath));
+} else {
+  console.log('WARNING: frontend/dist not found');
 }
 
 app.use(cors());
 app.use(express.json());
+
+// Initialize database
+let db;
+const dbPath = join(__dirname, 'mteia.db');
+
+async function initDb() {
+  try {
+    const SQL = await initSqlJs();
+    
+    if (fs.existsSync(dbPath)) {
+      const fileBuffer = fs.readFileSync(dbPath);
+      db = new SQL.Database(fileBuffer);
+      console.log('Loaded existing database');
+    } else {
+      db = new SQL.Database();
+      console.log('Created new database');
+    }
+    
+    // Create tables
+    db.run('PRAGMA foreign_keys = ON');
+    
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      name TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS questions (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL CHECK (type IN ('R','I','A','S','E','C')),
+      question_text TEXT NOT NULL,
+      order_num INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS students (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      school TEXT,
+      grade TEXT,
+      session_id TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS results (
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      scores TEXT NOT NULL,
+      recommended_field TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (student_id) REFERENCES students(id)
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS answers (
+      id TEXT PRIMARY KEY,
+      result_id TEXT NOT NULL,
+      question_id TEXT NOT NULL,
+      score INTEGER NOT NULL CHECK (score BETWEEN 1 AND 5),
+      FOREIGN KEY (result_id) REFERENCES results(id),
+      FOREIGN KEY (question_id) REFERENCES questions(id)
+    )`);
+    
+    // Create default admin
+    const adminCheck = db.exec("SELECT id FROM users WHERE email = 'admin@mteia.org'");
+    if (adminCheck.length === 0 || adminCheck[0].values.length === 0) {
+      const hash = bcrypt.hashSync('admin123', 10);
+      db.run('INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?)', 
+        [uuidv4(), 'admin@mteia.org', hash, '系統管理員']);
+      console.log('Default admin created');
+    }
+    
+    // Seed questions
+    const questionCheck = db.exec('SELECT COUNT(*) FROM questions');
+    const questionCount = questionCheck[0]?.values[0][0] || 0;
+    if (questionCount === 0) {
+      const defaultQuestions = [
+        { type: 'R', text: '組裝家具或電子設備時，我會仔細閱讀說明書並按照步驟操作' },
+        { type: 'R', text: '我喜歡使用工具修理東西，例如修理自行車或小家電' },
+        { type: 'R', text: '我願意在戶外工作，即使天氣炎熱或寒冷' },
+        { type: 'R', text: '我喜歡實際動手做東西，而不是只說不做' },
+        { type: 'R', text: '我擅長使用機械或電子設備' },
+        { type: 'R', text: '我喜歡種植植物或照顧動物' },
+        { type: 'R', text: '我喜歡有明確步驟的工作，不怕重複性高' },
+        { type: 'I', text: '我喜歡研究新事物，了解原理和運作方式' },
+        { type: 'I', text: '我會深入鑽研自己感興趣的課題，不怕花時間' },
+        { type: 'I', text: '我喜歡解決複雜的問題，需要動腦思考的那種' },
+        { type: 'I', text: '我習慣收集資料，分析數據來得出結論' },
+        { type: 'I', text: '我喜歡閱讀科普文章或觀看科學相關的影片' },
+        { type: 'I', text: '我對新科技和新發明特別感興趣' },
+        { type: 'I', text: '我希望從事需要高度專業知識的工作' },
+        { type: 'A', text: '我喜歡藝術創作，例如畫畫、寫作或音樂' },
+        { type: 'A', text: '我會用自己的方式表達想法，不一定遵循傳統' },
+        { type: 'A', text: '我喜歡參加創意活動，例如設計、表演或寫作' },
+        { type: 'A', text: '我對美感和設計有敏銳的觀察力' },
+        { type: 'A', text: '我希望工作環境能有發揮創意的空間' },
+        { type: 'A', text: '我喜歡獨自工作，有彈性時間的工作方式' },
+        { type: 'S', text: '我喜歡幫助別人解決問題或傾聽他們的困擾' },
+        { type: 'S', text: '我擅長與人溝通，能讓別人理解我的想法' },
+        { type: 'S', text: '我喜歡參與團體活動，樂於協助他人' },
+        { type: 'S', text: '我希望工作能對社會有正面貢獻' },
+        { type: 'S', text: '我會主動關心朋友的狀況，願意提供支持' },
+        { type: 'S', text: '我喜歡教學或傳授知識給別人' },
+        { type: 'S', text: '我容易與不同背景的人相處融洽' },
+        { type: 'E', text: '我喜歡帶領團隊，激勵大家一起達成目標' },
+        { type: 'E', text: '我善於說服別人接受我的想法' },
+        { type: 'E', text: '我喜歡有挑戰性的目標，願意冒險' },
+        { type: 'E', text: '我善於規劃和組織活動，能有效率地完成任務' },
+        { type: 'E', text: '我希望有機會晉升到管理階層' },
+        { type: 'E', text: '我喜歡競爭環境，能激發我的潛能' },
+        { type: 'C', text: '我喜歡有明確規則和程序的工作' },
+        { type: 'C', text: '我做事情喜歡按部就班，有條不紊' },
+        { type: 'C', text: '我擅長時間管理，能準時完成任務' },
+        { type: 'C', text: '我注重細節，能仔細核對文件資料' },
+        { type: 'C', text: '我喜歡處理數據和文書工作，例如整理報表' },
+        { type: 'C', text: '我服從規定，喜歡穩定的工作環境' },
+        { type: 'C', text: '我會徹底完成被交付的工作，即使枯燥也不馬虎' }
+      ];
+      
+      defaultQuestions.forEach((q, index) => {
+        db.run('INSERT INTO questions (id, type, question_text, order_num) VALUES (?, ?, ?, ?)', 
+          [uuidv4(), q.type, q.text, index + 1]);
+      });
+      console.log(`Seeded ${defaultQuestions.length} questions`);
+    }
+    
+    // Save database
+    const data = db.export();
+    fs.writeFileSync(dbPath, Buffer.from(data));
+    console.log('Database saved');
+    
+  } catch (err) {
+    console.error('DB init error:', err);
+  }
+}
+
+function saveDb() {
+  if (db) {
+    const data = db.export();
+    fs.writeFileSync(dbPath, Buffer.from(data));
+  }
+}
 
 // Auth middleware
 const authenticate = (req, res, next) => {
@@ -51,329 +197,288 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password required' });
   }
   
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const user = db.exec('SELECT * FROM users WHERE email = ?', [email]);
+  if (!user.length || !user[0].values.length) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
   
-  const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
-});
-
-app.post('/api/auth/register', (req, res) => {
-  const { email, password, name } = req.body;
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: 'All fields required' });
+  const row = user[0].values[0];
+  const userData = {
+    id: row[0],
+    email: row[1],
+    password_hash: row[2],
+    name: row[3]
+  };
+  
+  if (!bcrypt.compareSync(password, userData.password_hash)) {
+    return res.status(401).json({ error: 'Invalid credentials' });
   }
   
-  const exists = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (exists) {
-    return res.status(409).json({ error: 'Email already exists' });
-  }
-  
-  const hash = bcrypt.hashSync(password, 10);
-  const id = uuidv4();
-  db.prepare('INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?)').run(id, email, hash, name);
-  
-  const token = jwt.sign({ id, email, name }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, user: { id, email, name } });
+  const token = jwt.sign({ id: userData.id, email: userData.email }, JWT_SECRET, { expiresIn: '7d' });
+  res.json({ token, name: userData.name, email: userData.email });
 });
 
 // ============ QUESTIONS ROUTES ============
 
-// Get all questions
 app.get('/api/questions', (req, res) => {
-  const questions = db.prepare('SELECT * FROM questions ORDER BY order_num').all();
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const result = db.exec('SELECT id, type, question_text, order_num FROM questions ORDER BY order_num');
+  if (!result.length) return res.json([]);
+  
+  const questions = result[0].values.map(row => ({
+    id: row[0],
+    type: row[1],
+    question_text: row[2],
+    order_num: row[3]
+  }));
   res.json(questions);
 });
 
-// Get questions by type
-app.get('/api/questions/:type', (req, res) => {
-  const { type } = req.params;
-  const questions = db.prepare('SELECT * FROM questions WHERE type = ? ORDER BY order_num').all(type.toUpperCase());
-  res.json(questions);
-});
-
-// Add question (protected)
 app.post('/api/questions', authenticate, (req, res) => {
-  const { type, question_text } = req.body;
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const { type, question_text, order_num } = req.body;
   if (!type || !question_text) {
     return res.status(400).json({ error: 'Type and question_text required' });
   }
   
   const id = uuidv4();
-  const maxOrder = db.prepare('SELECT MAX(order_num) as max FROM questions').get().max || 0;
-  db.prepare('INSERT INTO questions (id, type, question_text, order_num) VALUES (?, ?, ?, ?)').run(id, type.toUpperCase(), question_text, maxOrder + 1);
+  db.run('INSERT INTO questions (id, type, question_text, order_num) VALUES (?, ?, ?, ?)', 
+    [id, type, question_text, order_num || 0]);
+  saveDb();
   
-  const question = db.prepare('SELECT * FROM questions WHERE id = ?').get(id);
-  res.json(question);
+  res.json({ id, type, question_text, order_num });
 });
 
-// Update question (protected)
-app.put('/api/questions/:id', authenticate, (req, res) => {
-  const { id } = req.params;
-  const { question_text, type } = req.body;
-  
-  const existing = db.prepare('SELECT * FROM questions WHERE id = ?').get(id);
-  if (!existing) {
-    return res.status(404).json({ error: 'Question not found' });
-  }
-  
-  db.prepare('UPDATE questions SET question_text = ?, type = ? WHERE id = ?').run(
-    question_text || existing.question_text,
-    type ? type.toUpperCase() : existing.type,
-    id
-  );
-  
-  const question = db.prepare('SELECT * FROM questions WHERE id = ?').get(id);
-  res.json(question);
-});
-
-// Delete question (protected)
 app.delete('/api/questions/:id', authenticate, (req, res) => {
-  const { id } = req.params;
-  db.prepare('DELETE FROM questions WHERE id = ?').run(id);
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  db.run('DELETE FROM questions WHERE id = ?', [req.params.id]);
+  saveDb();
   res.json({ success: true });
 });
 
-// Bulk import questions (protected)
-app.post('/api/questions/bulk', authenticate, (req, res) => {
-  const { questions } = req.body;
-  if (!Array.isArray(questions) || questions.length === 0) {
-    return res.status(400).json({ error: 'Questions array required' });
-  }
-  
-  const insert = db.prepare('INSERT INTO questions (id, type, question_text, order_num) VALUES (?, ?, ?, ?)');
-  const maxOrder = db.prepare('SELECT MAX(order_num) as max FROM questions').get().max || 0;
-  
-  const imported = [];
-  questions.forEach((q, index) => {
-    const id = uuidv4();
-    insert.run(id, q.type.toUpperCase(), q.question_text, maxOrder + index + 1);
-    imported.push({ id, type: q.type, question_text: q.question_text });
-  });
-  
-  res.json({ success: true, count: imported.length, questions: imported });
-});
+// ============ STUDENTS ROUTES ============
 
-// ============ STUDENTS & RESULTS ROUTES ============
-
-// Get all students
 app.get('/api/students', authenticate, (req, res) => {
-  const students = db.prepare(`
-    SELECT s.*, r.scores, r.recommended_field, r.created_at as result_date
-    FROM students s
-    LEFT JOIN results r ON s.id = r.student_id
-    ORDER BY s.created_at DESC
-  `).all();
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
   
-  const result = students.map(s => ({
-    ...s,
-    scores: s.scores ? JSON.parse(s.scores) : null
+  const result = db.exec('SELECT * FROM students ORDER BY created_at DESC');
+  if (!result.length) return res.json([]);
+  
+  const students = result[0].values.map(row => ({
+    id: row[0],
+    name: row[1],
+    school: row[2],
+    grade: row[3],
+    session_id: row[4],
+    created_at: row[5]
   }));
-  res.json(result);
+  res.json(students);
 });
 
-// Create student and result
-app.post('/api/results', (req, res) => {
-  const { name, school, grade, scores } = req.body;
-  if (!name || !scores) {
-    return res.status(400).json({ error: 'Name and scores required' });
+app.get('/api/students/:id', authenticate, (req, res) => {
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const student = db.exec('SELECT * FROM students WHERE id = ?', [req.params.id]);
+  if (!student.length || !student[0].values.length) {
+    return res.status(404).json({ error: 'Student not found' });
   }
   
-  // Calculate scores per type
-  const scoreMap = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0, count: { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 } };
-  
-  scores.forEach(({ question_id, score }) => {
-    const question = db.prepare('SELECT type FROM questions WHERE id = ?').get(question_id);
-    if (question && scoreMap[question.type] !== undefined) {
-      scoreMap[question.type] += score;
-      scoreMap.count[question.type]++;
-    }
-  });
-  
-  // Calculate average and find dominant type
-  const averages = {};
-  let maxType = 'R';
-  let maxAvg = 0;
-  
-  for (const type of ['R', 'I', 'A', 'S', 'E', 'C']) {
-    const count = scoreMap.count[type];
-    averages[type] = count > 0 ? scoreMap[type] / count : 0;
-    if (averages[type] > maxAvg) {
-      maxAvg = averages[type];
-      maxType = type;
-    }
-  }
-  
-  // Determine recommended field
-  const fieldMap = {
-    R: { zh: '工程、農業、機械、餐飲', en: 'Engineering, Agriculture, Mechanics, Culinary' },
-    I: { zh: '數理化、生命科學、資訊', en: 'Science, Mathematics, IT, Life Sciences' },
-    A: { zh: '藝術、設計、語文', en: 'Arts, Design, Languages' },
-    S: { zh: '社會心理、教育、醫藥衛生', en: 'Social Work, Education, Healthcare' },
-    E: { zh: '管理、財經、法政', en: 'Business, Finance, Law, Administration' },
-    C: { zh: '行政、圖書資訊、遊憩運動', en: 'Administration, Library, Recreation' }
+  const row = student[0].values[0];
+  const studentData = {
+    id: row[0],
+    name: row[1],
+    school: row[2],
+    grade: row[3],
+    session_id: row[4],
+    created_at: row[5]
   };
-
-  const lang = req.body.lang || 'zh';
-  const getField = (type) => fieldMap[type]?.[lang] || fieldMap[type]?.zh || fieldMap[type];
   
-  const studentId = uuidv4();
-  const sessionId = uuidv4();
-  
-  // Insert student
-  db.prepare('INSERT INTO students (id, name, school, grade, session_id) VALUES (?, ?, ?, ?, ?)').run(
-    studentId, name, school || null, grade || null, sessionId
-  );
-  
-  // Insert result
-  const resultId = uuidv4();
-  db.prepare('INSERT INTO results (id, student_id, scores, recommended_field) VALUES (?, ?, ?, ?)').run(
-    resultId, studentId, JSON.stringify(averages), getField(maxType)
-  );
-  
-  // Insert answers
-  const insertAnswer = db.prepare('INSERT INTO answers (id, result_id, question_id, score) VALUES (?, ?, ?, ?)');
-  scores.forEach(({ question_id, score }) => {
-    insertAnswer.run(uuidv4(), resultId, question_id, score);
-  });
-  
-  res.json({
-    student_id: studentId,
-    session_id: sessionId,
-    scores: averages,
-    recommended_field: getField(maxType),
-    result_id: resultId
-  });
-});
-
-// Get result by session (student view)
-app.get('/api/results/:sessionId', (req, res) => {
-  const { sessionId } = req.params;
-  const student = db.prepare('SELECT * FROM students WHERE session_id = ?').get(sessionId);
-  
-  if (!student) {
-    return res.status(404).json({ error: 'Result not found' });
+  // Get results
+  const results = db.exec('SELECT * FROM results WHERE student_id = ?', [req.params.id]);
+  if (results.length && results[0].values.length) {
+    studentData.results = results[0].values.map(r => ({
+      id: r[0],
+      student_id: r[1],
+      scores: JSON.parse(r[2]),
+      recommended_field: r[3],
+      created_at: r[4]
+    }));
   }
   
-  const result = db.prepare('SELECT * FROM results WHERE student_id = ?').get(student.id);
-  if (!result) {
-    return res.status(404).json({ error: 'No result yet' });
-  }
-  
-  res.json({
-    student,
-    scores: JSON.parse(result.scores),
-    recommended_field: result.recommended_field,
-    created_at: result.created_at
-  });
+  res.json(studentData);
 });
 
-// Get result details with answers (counselor view)
-app.get('/api/results/detail/:id', authenticate, (req, res) => {
-  const { id } = req.params;
-  const result = db.prepare('SELECT * FROM results WHERE id = ?').get(id);
-  
-  if (!result) {
-    return res.status(404).json({ error: 'Result not found' });
-  }
-  
-  const student = db.prepare('SELECT * FROM students WHERE id = ?').get(result.student_id);
-  const answers = db.prepare(`
-    SELECT a.*, q.type, q.question_text 
-    FROM answers a 
-    JOIN questions q ON a.question_id = q.id 
-    WHERE a.result_id = ?
-  `).all(id);
-  
-  res.json({
-    student,
-    result,
-    scores: JSON.parse(result.scores),
-    answers
-  });
-});
-
-// Delete student (protected)
 app.delete('/api/students/:id', authenticate, (req, res) => {
-  const { id } = req.params;
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
   
-  // Delete answers first
-  const results = db.prepare('SELECT id FROM results WHERE student_id = ?').all(id);
-  results.forEach(r => {
-    db.prepare('DELETE FROM answers WHERE result_id = ?').run(r.id);
-  });
-  db.prepare('DELETE FROM results WHERE student_id = ?').run(id);
-  db.prepare('DELETE FROM students WHERE id = ?').run(id);
-  
+  db.run('DELETE FROM answers WHERE result_id IN (SELECT id FROM results WHERE student_id = ?)', [req.params.id]);
+  db.run('DELETE FROM results WHERE student_id = ?', [req.params.id]);
+  db.run('DELETE FROM students WHERE id = ?', [req.params.id]);
+  saveDb();
   res.json({ success: true });
 });
 
-// Export CSV (protected)
-app.get('/api/export/csv', authenticate, (req, res) => {
-  const students = db.prepare(`
-    SELECT s.name, s.school, s.grade, s.created_at, r.scores, r.recommended_field
+// ============ RESULTS ROUTES ============
+
+app.get('/api/results', authenticate, (req, res) => {
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const result = db.exec(`
+    SELECT r.id, r.student_id, r.scores, r.recommended_field, r.created_at, s.name, s.school, s.grade
+    FROM results r
+    JOIN students s ON r.student_id = s.id
+    ORDER BY r.created_at DESC
+  `);
+  if (!result.length) return res.json([]);
+  
+  const results = result[0].values.map(row => ({
+    id: row[0],
+    student_id: row[1],
+    scores: JSON.parse(row[2]),
+    recommended_field: row[3],
+    created_at: row[4],
+    student_name: row[5],
+    school: row[6],
+    grade: row[7]
+  }));
+  res.json(results);
+});
+
+// ============ STUDENT SIDE ROUTES ============
+
+app.post('/api/student/start', (req, res) => {
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const { name, school, grade } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Name required' });
+  }
+  
+  const id = uuidv4();
+  const session_id = uuidv4();
+  db.run('INSERT INTO students (id, name, school, grade, session_id) VALUES (?, ?, ?, ?, ?)', 
+    [id, name, school || '', grade || '', session_id]);
+  saveDb();
+  
+  res.json({ student_id: id, session_id });
+});
+
+app.post('/api/student/submit', (req, res) => {
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const { student_id, answers } = req.body;
+  if (!student_id || !answers || !Array.isArray(answers)) {
+    return res.status(400).json({ error: 'student_id and answers required' });
+  }
+  
+  // Calculate scores
+  const scores = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+  const counts = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+  
+  answers.forEach(({ question_id, score, type }) => {
+    if (scores[type] !== undefined) {
+      scores[type] += score;
+      counts[type]++;
+    }
+  });
+  
+  // Normalize scores (average)
+  Object.keys(scores).forEach(key => {
+    if (counts[key] > 0) {
+      scores[key] = Math.round((scores[key] / counts[key]) * 10) / 10;
+    }
+  });
+  
+  // Find dominant type
+  const dominant = Object.entries(scores).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+  
+  const fieldMap = {
+    R: '工程、農業、機械、餐飲',
+    I: '數理化、生命科學、資訊',
+    A: '藝術、設計、語文',
+    S: '社會心理、教育、醫藥衛生',
+    E: '管理、財經、法政',
+    C: '行政、圖書資訊、遊憩運動'
+  };
+  
+  const recommended_field = fieldMap[dominant];
+  
+  // Save result
+  const result_id = uuidv4();
+  db.run('INSERT INTO results (id, student_id, scores, recommended_field) VALUES (?, ?, ?, ?)', 
+    [result_id, student_id, JSON.stringify(scores), recommended_field]);
+  
+  // Save answers
+  answers.forEach(ans => {
+    db.run('INSERT INTO answers (id, result_id, question_id, score) VALUES (?, ?, ?, ?)', 
+      [uuidv4(), result_id, ans.question_id, ans.score]);
+  });
+  
+  saveDb();
+  
+  res.json({ result_id, scores, recommended_field, dominant });
+});
+
+app.get('/api/student/result/:student_id', (req, res) => {
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const result = db.exec('SELECT * FROM results WHERE student_id = ? ORDER BY created_at DESC LIMIT 1', [req.params.student_id]);
+  if (!result.length || !result[0].values.length) {
+    return res.status(404).json({ error: 'No result found' });
+  }
+  
+  const row = result[0].values[0];
+  res.json({
+    id: row[0],
+    student_id: row[1],
+    scores: JSON.parse(row[2]),
+    recommended_field: row[3],
+    created_at: row[4]
+  });
+});
+
+// ============ EXPORT ROUTES ============
+
+app.get('/api/export/students', authenticate, (req, res) => {
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const result = db.exec(`
+    SELECT s.name, s.school, s.grade, r.scores, r.recommended_field, r.created_at
     FROM students s
     LEFT JOIN results r ON s.id = r.student_id
-    ORDER BY s.created_at DESC
-  `).all();
+    ORDER BY r.created_at DESC
+  `);
   
-  const csvHeader = '姓名,學校,年級,日期,R(實用),I(研究),A(藝術),S(社會),E(企業),C(事務),推薦學群\n';
-  const csvRows = students.map(s => {
-    const scores = s.scores ? JSON.parse(s.scores) : { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
-    return `"${s.name}","${s.school || ''}","${s.grade || ''}","${s.created_at}",${scores.R.toFixed(2)},${scores.I.toFixed(2)},${scores.A.toFixed(2)},${scores.S.toFixed(2)},${scores.E.toFixed(2)},${scores.C.toFixed(2)},"${s.recommended_field || ''}"`;
-  }).join('\n');
+  if (!result.length) return res.json([]);
   
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename=mteia-results.csv');
-  res.send('\ufeff' + csvHeader + csvRows); // BOM for Excel
-});
-
-// ============ STATS ROUTE ============
-
-app.get('/api/stats', authenticate, (req, res) => {
-  const totalStudents = db.prepare('SELECT COUNT(*) as count FROM students').get().count;
-  const totalResults = db.prepare('SELECT COUNT(*) as count FROM results').get().count;
-  const totalQuestions = db.prepare('SELECT COUNT(*) as count FROM questions').get().count;
-  
-  // Top recommended fields
-  const fieldCounts = db.prepare(`
-    SELECT recommended_field, COUNT(*) as count 
-    FROM results 
-    GROUP BY recommended_field 
-    ORDER BY count DESC
-  `).all();
-  
-  res.json({
-    totalStudents,
-    totalResults,
-    totalQuestions,
-    fieldCounts
+  let csv = 'Name,School,Grade,Scores,Recommended Field,Date\n';
+  result[0].values.forEach(row => {
+    csv += `${row[0]},${row[1]||''},${row[2]||''},${row[3]||''},${row[4]||''},${row[5]||''}\n`;
   });
+  
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=students.csv');
+  res.send(csv);
 });
 
-// Get current user (for token validation)
-app.get('/api/auth/me', authenticate, (req, res) => {
-  const user = db.prepare('SELECT id, email, name FROM users WHERE id = ?').get(req.user.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ user });
-});
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// SPA fallback - serve index.html for all non-API routes
-// This must be after all API routes
-if (existsSync(distPath)) {
-  app.get('*', (req, res) => {
+// Serve index.html for all non-API routes (SPA)
+app.get('*', (req, res) => {
+  if (fs.existsSync(distPath)) {
     res.sendFile(join(distPath, 'index.html'));
-  });
-}
+  } else {
+    res.send('Frontend not found. Please build the frontend.');
+  }
+});
 
-app.listen(PORT, () => {
-  console.log(`🚀 MTEIA RIASEC Server running on http://localhost:${PORT}`);
-  console.log(`📱 Open in browser: http://YOUR_IP:${PORT}`);
+// Start server
+initDb().then(() => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+    console.log(`🌐 Visit: https://mteia-riasec-production.up.railway.app`);
+  });
 });
