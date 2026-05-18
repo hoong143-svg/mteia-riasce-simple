@@ -225,14 +225,15 @@ app.post('/api/auth/login', (req, res) => {
 app.get('/api/questions', (req, res) => {
   if (!db) return res.status(500).json({ error: 'Database not ready' });
   
-  const result = db.exec('SELECT id, type, question_text, order_num FROM questions ORDER BY order_num');
+  const result = db.exec('SELECT id, type, question_text, question_text_zh, order_num FROM questions ORDER BY order_num');
   if (!result.length) return res.json([]);
   
   const questions = result[0].values.map(row => ({
     id: row[0],
     type: row[1],
     question_text: row[2],
-    order_num: row[3]
+    question_text_zh: row[3],
+    order_num: row[4]
   }));
   res.json(questions);
 });
