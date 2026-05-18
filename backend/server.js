@@ -496,6 +496,31 @@ app.get('/api/student/result/:student_id', (req, res) => {
   });
 });
 
+// Get result by session_id (for student to view their result)
+app.get('/api/results/:session_id', (req, res) => {
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const studentResult = db.exec('SELECT id FROM students WHERE session_id = ?', [req.params.session_id]);
+  if (!studentResult.length || !studentResult[0].values.length) {
+    return res.status(404).json({ error: 'Student not found' });
+  }
+  
+  const studentId = studentResult[0].values[0][0];
+  const result = db.exec('SELECT * FROM results WHERE student_id = ? ORDER BY created_at DESC LIMIT 1', [studentId]);
+  if (!result.length || !result[0].values.length) {
+    return res.status(404).json({ error: 'No result found' });
+  }
+  
+  const row = result[0].values[0];
+  res.json({
+    id: row[0],
+    student_id: row[1],
+    scores: JSON.parse(row[2]),
+    recommended_field: row[3],
+    created_at: row[4]
+  });
+});
+
 // ============ EXPORT ROUTES ============
 
 app.get('/api/export/students', authenticate, (req, res) => {
