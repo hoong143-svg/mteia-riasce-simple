@@ -350,6 +350,59 @@ app.get('/api/results', authenticate, (req, res) => {
   res.json(results);
 });
 
+// Student submit results (no auth required)
+app.post('/api/results', (req, res) => {
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const { name, school, grade, scores } = req.body;
+  if (!name || !scores) {
+    return res.status(400).json({ error: 'name and scores required' });
+  }
+  
+  // Create student first
+  const student_id = uuidv4();
+  const session_id = uuidv4();
+  db.run('INSERT INTO students (id, name, school, grade, session_id) VALUES (?, ?, ?, ?, ?)',
+    [student_id, name, school || '', grade || '', session_id]);
+  
+  // Calculate scores by type
+  const typeScores = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+  const counts = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+  
+  scores.forEach(({ question_id, score, type }) => {
+    if (typeScores[type] !== undefined) {
+      typeScores[type] += score;
+      counts[type]++;
+    }
+  });
+  
+  // Normalize
+  Object.keys(typeScores).forEach(key => {
+    if (counts[key] > 0) {
+      typeScores[key] = Math.round((typeScores[key] / counts[key]) * 10) / 10;
+    }
+  });
+  
+  // Find dominant
+  const dominant = Object.entries(typeScores).reduce((a, b) =\u003e a[1] > b[1] ? a : b)[0];
+  
+  const fieldMap = {
+    R: '工程、農業、機械、餐飲',
+    I: '數理化、生命科學、資訊',
+    A: '藝術、設計、語文',
+    S: '社會心理、教育、醫藥衛生',
+    E: '管理、財經、法政',
+    C: '行政、圖書資訊、遊憩運動'
+  };
+  
+  const result_id = uuidv4();
+  db.run('INSERT INTO results (id, student_id, scores, recommended_field) VALUES (?, ?, ?, ?)',
+    [result_id, student_id, JSON.stringify(typeScores), fieldMap[dominant]]);
+  
+  saveDb();
+  res.json({ session_id, student_id });
+});
+
 // ============ STUDENT SIDE ROUTES ============
 
 app.post('/api/student/start', (req, res) => {

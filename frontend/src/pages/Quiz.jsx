@@ -47,13 +47,21 @@ export default function Quiz() {
 
   const fetchQuestions = async () => {
     setLoading(true)
+    setError('')
     try {
       const res = await fetch('/api/questions')
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+      }
       const data = await res.json()
+      if (!data || data.length === 0) {
+        throw new Error('No questions received')
+      }
       setQuestions(data)
       setStep('quiz')
-    } catch {
-      setError('載入題目失敗，請稍後再試')
+    } catch (err) {
+      console.error('Fetch error:', err)
+      setError(`載入題目失敗: ${err.message}`)
     } finally {
       setLoading(false)
     }
@@ -85,10 +93,14 @@ export default function Quiz() {
   }
 
   const handleSubmit = async () => {
-    const answersArray = Object.entries(answers).map(([question_id, score]) => ({
-      question_id,
-      score
-    }))
+    const answersArray = Object.entries(answers).map(([question_id, score]) => {
+      const q = questions.find(x => x.id === question_id)
+      return {
+        question_id,
+        score,
+        type: q?.type || 'R'
+      }
+    })
 
     if (answersArray.length < questions.length) {
       setError(lang === 'en' 
