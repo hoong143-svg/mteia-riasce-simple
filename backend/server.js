@@ -500,12 +500,13 @@ app.get('/api/student/result/:student_id', (req, res) => {
 app.get('/api/results/:session_id', (req, res) => {
   if (!db) return res.status(500).json({ error: 'Database not ready' });
   
-  const studentResult = db.exec('SELECT id FROM students WHERE session_id = ?', [req.params.session_id]);
+  const studentResult = db.exec('SELECT id, name, school, grade FROM students WHERE session_id = ?', [req.params.session_id]);
   if (!studentResult.length || !studentResult[0].values.length) {
     return res.status(404).json({ error: 'Student not found' });
   }
   
-  const studentId = studentResult[0].values[0][0];
+  const studentRow = studentResult[0].values[0];
+  const studentId = studentRow[0];
   const result = db.exec('SELECT * FROM results WHERE student_id = ? ORDER BY created_at DESC LIMIT 1', [studentId]);
   if (!result.length || !result[0].values.length) {
     return res.status(404).json({ error: 'No result found' });
@@ -517,7 +518,12 @@ app.get('/api/results/:session_id', (req, res) => {
     student_id: row[1],
     scores: JSON.parse(row[2]),
     recommended_field: row[3],
-    created_at: row[4]
+    created_at: row[4],
+    student: {
+      name: studentRow[1],
+      school: studentRow[2],
+      grade: studentRow[3]
+    }
   });
 });
 
