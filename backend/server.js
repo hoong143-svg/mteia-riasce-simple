@@ -384,7 +384,7 @@ app.post('/api/results', (req, res) => {
   });
   
   // Find dominant
-  const dominant = Object.entries(typeScores).reduce((a, b) =\u003e a[1] > b[1] ? a : b)[0];
+  const dominant = Object.entries(typeScores).reduce((a, b) => a[1] > b[1] ? a : b)[0];
   
   const fieldMap = {
     R: '工程、農業、機械、餐飲',
