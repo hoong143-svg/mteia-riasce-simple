@@ -9,5 +9,5 @@ services:
         value: production
       - key: PORT
         value: 3001
-    autoDeploy: false
+    autoDeploy: true
     plan: free
