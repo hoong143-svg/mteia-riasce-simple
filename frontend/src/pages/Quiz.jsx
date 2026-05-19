@@ -25,7 +25,7 @@ const scoreLabels = [
 ]
 
 const gradeOptions = {
-  'zh-TW': ['初一', '初二', '初三', '高一', '高二', '高三', '其他'],
+  'zh-CN': ['初一', '初二', '初三', '高一', '高二', '高三', '其他'],
   en: ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12', 'Other']
 }
 

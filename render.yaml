@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mteia-riasec
+    name: mteia-riasce-simple
     env: node
     buildCommand: cd frontend && npm install && npm run build && cd ../backend && npm install
     startCommand: cd backend && node server.js

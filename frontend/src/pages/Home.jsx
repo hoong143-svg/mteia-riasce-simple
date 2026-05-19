@@ -22,7 +22,7 @@ export default function Home() {
               onChange={(e) => setLang(e.target.value)}
               className="px-2 py-1 border rounded text-sm"
             >
-              <option value="zh-TW">繁體</option>
+              <option value="zh-CN">简体</option>
               <option value="en">EN</option>
             </select>
             <Link 

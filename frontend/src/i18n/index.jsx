@@ -1,13 +1,13 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import zhTW from './zh-TW'
+import zhCN from './zh-CN'
 import en from './en'
 
-const translations = { 'zh-TW': zhTW, en }
+const translations = { 'zh-CN': zhCN, en }
 
 const LanguageContext = createContext()
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState('zh-TW')
+  const [lang, setLang] = useState('zh-CN')
 
   useEffect(() => {
     const saved = localStorage.getItem('mteia-lang')

@@ -113,7 +113,7 @@ export default function AdminStudents() {
                       {s.school || '-'} {s.grade && `/ ${s.grade}`}
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-sm">
-                      {s.created_at ? new Date(s.created_at).toLocaleDateString('zh-TW') : '-'}
+                      {s.created_at ? new Date(s.created_at).toLocaleDateString('zh-CN') : '-'}
                     </td>
                     <td className="px-6 py-4">
                       {s.scores ? (
