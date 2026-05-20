@@ -194,7 +194,7 @@ export default function Result() {
             </div>
           </div>
           <p className="text-blue-100 mb-4">{typeInfo[topType].desc[lang]}</p>
-          <p className="text-lg font-semibold">{t('result.recommendedField')}：{data.recommended_field}</p>
+          <p className="text-lg font-semibold">{t('result.recommendedField')}：{typeof data.recommended_field === 'object' ? data.recommended_field[lang] || data.recommended_field.zh : data.recommended_field}</p>
         </div>
 
         {/* Recommended Fields */}

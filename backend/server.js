@@ -387,12 +387,12 @@ app.post('/api/results', (req, res) => {
   const dominant = Object.entries(typeScores).reduce((a, b) => a[1] > b[1] ? a : b)[0];
   
   const fieldMap = {
-    R: '工程、农业、机械、餐饮',
-    I: '数理化、生命科学、资讯',
-    A: '艺术、设计、语文',
-    S: '社会心理、教育、医药卫生',
-    E: '管理、财经、法政',
-    C: '行政、图书资讯、游憩运动'
+    R: { zh: '工程、农业、机械、餐饮', en: 'Engineering, Agriculture, Culinary, Mechanical' },
+    I: { zh: '数理化、生命科学、资讯', en: 'Math, Science, Computer Science' },
+    A: { zh: '艺术、设计、语文', en: 'Art, Design, Languages' },
+    S: { zh: '社会心理、教育、医药卫生', en: 'Social, Education, Medicine' },
+    E: { zh: '管理、财经、法政', en: 'Management, Finance, Law' },
+    C: { zh: '行政、图书资讯、游憩运动', en: 'Administration, Library, Recreation' }
   };
   
   const result_id = uuidv4();
@@ -452,12 +452,12 @@ app.post('/api/student/submit', (req, res) => {
   const dominant = Object.entries(scores).reduce((a, b) => a[1] > b[1] ? a : b)[0];
   
   const fieldMap = {
-    R: '工程、农业、机械、餐饮',
-    I: '数理化、生命科学、资讯',
-    A: '艺术、设计、语文',
-    S: '社会心理、教育、医药卫生',
-    E: '管理、财经、法政',
-    C: '行政、图书资讯、游憩运动'
+    R: { zh: '工程、农业、机械、餐饮', en: 'Engineering, Agriculture, Culinary, Mechanical' },
+    I: { zh: '数理化、生命科学、资讯', en: 'Math, Science, Computer Science' },
+    A: { zh: '艺术、设计、语文', en: 'Art, Design, Languages' },
+    S: { zh: '社会心理、教育、医药卫生', en: 'Social, Education, Medicine' },
+    E: { zh: '管理、财经、法政', en: 'Management, Finance, Law' },
+    C: { zh: '行政、图书资讯、游憩运动', en: 'Administration, Library, Recreation' }
   };
   
   const recommended_field = fieldMap[dominant];
