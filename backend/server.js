@@ -387,12 +387,12 @@ app.post('/api/results', (req, res) => {
   const dominant = Object.entries(typeScores).reduce((a, b) => a[1] > b[1] ? a : b)[0];
   
   const fieldMap = {
-    R: '工程、農業、機械、餐飲',
-    I: '數理化、生命科學、資訊',
-    A: '藝術、設計、語文',
-    S: '社會心理、教育、醫藥衛生',
-    E: '管理、財經、法政',
-    C: '行政、圖書資訊、遊憩運動'
+    R: '工程、农业、机械、餐饮',
+    I: '数理化、生命科学、资讯',
+    A: '艺术、设计、语文',
+    S: '社会心理、教育、医药卫生',
+    E: '管理、财经、法政',
+    C: '行政、图书资讯、游憩运动'
   };
   
   const result_id = uuidv4();
@@ -452,12 +452,12 @@ app.post('/api/student/submit', (req, res) => {
   const dominant = Object.entries(scores).reduce((a, b) => a[1] > b[1] ? a : b)[0];
   
   const fieldMap = {
-    R: '工程、農業、機械、餐飲',
-    I: '數理化、生命科學、資訊',
-    A: '藝術、設計、語文',
-    S: '社會心理、教育、醫藥衛生',
-    E: '管理、財經、法政',
-    C: '行政、圖書資訊、遊憩運動'
+    R: '工程、农业、机械、餐饮',
+    I: '数理化、生命科学、资讯',
+    A: '艺术、设计、语文',
+    S: '社会心理、教育、医药卫生',
+    E: '管理、财经、法政',
+    C: '行政、图书资讯、游憩运动'
   };
   
   const recommended_field = fieldMap[dominant];
