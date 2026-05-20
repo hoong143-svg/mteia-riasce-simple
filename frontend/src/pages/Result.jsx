@@ -9,12 +9,12 @@ import jsPDF from 'jspdf'
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend)
 
 const typeInfo = {
-  R: { name: { zh: '實用型', en: 'Realistic' }, color: '#ef4444', emoji: '🔧', desc: { zh: '喜歡實際操作、組裝、維修工具和機械', en: 'Likes hands-on work, assembling, repairing tools and machinery' } },
-  I: { name: { zh: '研究型', en: 'Investigative' }, color: '#a855f7', emoji: '🔬', desc: { zh: '喜歡研究、思考、分析和解決複雜問題', en: 'Likes researching, thinking, analyzing and solving complex problems' } },
-  A: { name: { zh: '藝術型', en: 'Artistic' }, color: '#ec4899', emoji: '🎨', desc: { zh: '喜歡創意、表達、設計和藝術創作', en: 'Likes creativity, expression, design and artistic work' } },
-  S: { name: { zh: '社會型', en: 'Social' }, color: '#22c55e', emoji: '🤝', desc: { zh: '喜歡幫助他人、教育、諮詢和社會服務', en: 'Likes helping others, education, counseling and social services' } },
-  E: { name: { zh: '企業型', en: 'Enterprising' }, color: '#eab308', emoji: '💼', desc: { zh: '喜歡領導、說服、規劃和管理', en: 'Likes leadership, persuasion, planning and management' } },
-  C: { name: { zh: '事務型', en: 'Conventional' }, color: '#3b82f6', emoji: '📋', desc: { zh: '喜歡規矩、精確、有序的文書和行政工作', en: 'Likes rules, precision, organized clerical and administrative work' } }
+  R: { name: { zh: '实用型', en: 'Realistic' }, color: '#ef4444', emoji: '🔧', desc: { zh: '喜欢实际操作、组装、维修工具和机械', en: 'Likes hands-on work, assembling, repairing tools and machinery' } },
+  I: { name: { zh: '研究型', en: 'Investigative' }, color: '#a855f7', emoji: '🔬', desc: { zh: '喜欢研究、思考、分析和解决问题', en: 'Likes researching, thinking, analyzing and solving complex problems' } },
+  A: { name: { zh: '艺术型', en: 'Artistic' }, color: '#ec4899', emoji: '🎨', desc: { zh: '喜欢创意、表达、设计和艺术创作', en: 'Likes creativity, expression, design and artistic work' } },
+  S: { name: { zh: '社会型', en: 'Social' }, color: '#22c55e', emoji: '🤝', desc: { zh: '喜欢帮助他人、教育、咨询和社会服务', en: 'Likes helping others, education, counseling and social services' } },
+  E: { name: { zh: '企业型', en: 'Enterprising' }, color: '#eab308', emoji: '💼', desc: { zh: '喜欢领导、说服、规划和管理', en: 'Likes leadership, persuasion, planning and management' } },
+  C: { name: { zh: '事务型', en: 'Conventional' }, color: '#3b82f6', emoji: '📋', desc: { zh: '喜欢规矩、精确、有序的文书和行政工作', en: 'Likes rules, precision, organized clerical and administrative work' } }
 }
 
 export default function Result() {

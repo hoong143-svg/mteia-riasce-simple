@@ -32,7 +32,7 @@ export default function Admin() {
             </div>
             <div>
               <h1 className="font-bold text-gray-800">MTEIA 管理後台</h1>
-              <p className="text-xs text-gray-500">歡迎，{user?.name}</p>
+              <p className="text-xs text-gray-500">欢迎，{user?.name}</p>
             </div>
           </div>
           <button onClick={handleLogout} className="text-gray-600 hover:text-red-500">

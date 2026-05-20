@@ -17,11 +17,11 @@ const typeColors = {
 }
 
 const scoreLabels = [
-  { value: 5, zh: '非常喜歡', en: 'Strongly Like' },
-  { value: 4, zh: '喜歡', en: 'Like' },
+  { value: 5, zh: '非常喜欢', en: 'Strongly Like' },
+  { value: 4, zh: '喜欢', en: 'Like' },
   { value: 3, zh: '普通', en: 'Neutral' },
-  { value: 2, zh: '不太喜歡', en: 'Dislike' },
-  { value: 1, zh: '非常不喜歡', en: 'Strongly Dislike' }
+  { value: 2, zh: '不太喜欢', en: 'Dislike' },
+  { value: 1, zh: '非常不喜欢', en: 'Strongly Dislike' }
 ]
 
 const gradeOptions = {
