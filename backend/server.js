@@ -355,15 +355,16 @@ app.post('/api/results', (req, res) => {
   if (!db) return res.status(500).json({ error: 'Database not ready' });
   
   const { name, school, grade, scores } = req.body;
-  if (!name || !scores) {
-    return res.status(400).json({ error: 'name and scores required' });
+  if (!name || !scores || !Array.isArray(scores)) {
+    return res.status(400).json({ error: 'name and scores (array) required' });
   }
   
-  // Create student first
-  const student_id = uuidv4();
-  const session_id = uuidv4();
-  db.run('INSERT INTO students (id, name, school, grade, session_id) VALUES (?, ?, ?, ?, ?)',
-    [student_id, name, school || '', grade || '', session_id]);
+  try {
+    // Create student first
+    const student_id = uuidv4();
+    const session_id = uuidv4();
+    db.run('INSERT INTO students (id, name, school, grade, session_id) VALUES (?, ?, ?, ?, ?)',
+      [student_id, name, school || '', grade || '', session_id]);
   
   // Calculate scores by type
   const typeScores = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
@@ -400,7 +401,12 @@ app.post('/api/results', (req, res) => {
     [result_id, student_id, JSON.stringify(typeScores), JSON.stringify(fieldMap[dominant])]);
   
   saveDb();
+  console.log('Result saved:', { session_id, student_id, dominant, typeScores });
   res.json({ session_id, student_id });
+  } catch (err) {
+    console.error('Submit error:', err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
 });
 
 // ============ STUDENT SIDE ROUTES ============
