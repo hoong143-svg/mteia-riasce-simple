@@ -43,7 +43,7 @@ export default function AdminStudents() {
   }
 
   const handleExportCSV = () => {
-    window.open('/api/export/csv', '_blank')
+    window.open('/api/export/students', '_blank')
   }
 
   return (
