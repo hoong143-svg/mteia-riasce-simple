@@ -229,6 +229,31 @@ app.get('/api/auth/me', authenticate, (req, res) => {
   res.json({ user: req.user });
 });
 
+// ============ STATS ROUTES ============
+
+app.get('/api/stats', authenticate, (req, res) => {
+  if (!db) return res.status(500).json({ error: 'Database not ready' });
+  
+  const totalStudents = db.exec('SELECT COUNT(*) FROM students');
+  const totalResults = db.exec('SELECT COUNT(*) FROM results');
+  const totalQuestions = db.exec('SELECT COUNT(*) FROM questions');
+  
+  // Get field distribution
+  const fieldDist = db.exec('SELECT recommended_field, COUNT(*) as count FROM results GROUP BY recommended_field ORDER BY count DESC');
+  
+  const stats = {
+    totalStudents: totalStudents[0]?.values[0][0] || 0,
+    totalResults: totalResults[0]?.values[0][0] || 0,
+    totalQuestions: totalQuestions[0]?.values[0][0] || 0,
+    fieldCounts: fieldDist.length > 0 ? fieldDist[0].values.map(row => ({
+      recommended_field: row[0],
+      count: row[1]
+    })) : []
+  };
+  
+  res.json(stats);
+});
+
 // ============ QUESTIONS ROUTES ============
 
 app.get('/api/questions', (req, res) => {
