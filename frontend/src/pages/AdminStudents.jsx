@@ -43,7 +43,8 @@ export default function AdminStudents() {
   }
 
   const handleExportCSV = () => {
-    window.open('/api/export/students', '_blank')
+    const token = localStorage.getItem('mteia_token');
+    window.open(`/api/export/students?token=${token}`, '_blank');
   }
 
   return (
