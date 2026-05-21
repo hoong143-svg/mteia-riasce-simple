@@ -225,6 +225,10 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ token, name: userData.name, email: userData.email });
 });
 
+app.get('/api/auth/me', authenticate, (req, res) => {
+  res.json({ user: req.user });
+});
+
 // ============ QUESTIONS ROUTES ============
 
 app.get('/api/questions', (req, res) => {
