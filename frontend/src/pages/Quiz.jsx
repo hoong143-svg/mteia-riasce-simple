@@ -114,6 +114,7 @@ export default function Quiz() {
     setError('')
 
     try {
+      console.log('Submitting quiz with data:', { name: formData.name, scores: answersArray });
       const res = await fetch('/api/results', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,8 +126,10 @@ export default function Quiz() {
           lang: lang
         })
       })
-
+      console.log('Response status:', res.status);
+      
       const data = await res.json()
+      console.log('Response data:', data);
       if (!res.ok) throw new Error(data.error || '提交失敗')
       
       navigate(`/result/${data.session_id}`)
