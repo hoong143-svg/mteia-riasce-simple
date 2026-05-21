@@ -234,24 +234,32 @@ app.get('/api/auth/me', authenticate, (req, res) => {
 app.get('/api/stats', authenticate, (req, res) => {
   if (!db) return res.status(500).json({ error: 'Database not ready' });
   
-  const totalStudents = db.exec('SELECT COUNT(*) FROM students');
-  const totalResults = db.exec('SELECT COUNT(*) FROM results');
-  const totalQuestions = db.exec('SELECT COUNT(*) FROM questions');
-  
-  // Get field distribution
-  const fieldDist = db.exec('SELECT recommended_field, COUNT(*) as count FROM results GROUP BY recommended_field ORDER BY count DESC');
-  
-  const stats = {
-    totalStudents: totalStudents[0]?.values[0][0] || 0,
-    totalResults: totalResults[0]?.values[0][0] || 0,
-    totalQuestions: totalQuestions[0]?.values[0][0] || 0,
-    fieldCounts: fieldDist.length > 0 ? fieldDist[0].values.map(row => ({
-      recommended_field: row[0] ? JSON.parse(row[0]).zh || row[0] : '',
-      count: row[1]
-    })) : []
-  };
-  
-  res.json(stats);
+  try {
+    const totalStudents = db.exec('SELECT COUNT(*) FROM students');
+    const totalResults = db.exec('SELECT COUNT(*) FROM results');
+    const totalQuestions = db.exec('SELECT COUNT(*) FROM questions');
+    
+    // Get field distribution
+    const fieldDist = db.exec('SELECT recommended_field, COUNT(*) as count FROM results GROUP BY recommended_field ORDER BY count DESC');
+    
+    const stats = {
+      totalStudents: totalStudents[0]?.values[0][0] || 0,
+      totalResults: totalResults[0]?.values[0][0] || 0,
+      totalQuestions: totalQuestions[0]?.values[0][0] || 0,
+      fieldCounts: fieldDist.length > 0 ? fieldDist[0].values.map(row => {
+        let field = row[0];
+        try {
+          field = JSON.parse(row[0]).zh || row[0];
+        } catch (e) {}
+        return { recommended_field: field, count: row[1] };
+      }) : []
+    };
+    
+    res.json(stats);
+  } catch (err) {
+    console.error('Stats API error:', err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
 });
 
 // ============ QUESTIONS ROUTES ============
@@ -301,27 +309,42 @@ app.delete('/api/questions/:id', authenticate, (req, res) => {
 app.get('/api/students', authenticate, (req, res) => {
   if (!db) return res.status(500).json({ error: 'Database not ready' });
   
-  const result = db.exec(`
-    SELECT s.id, s.name, s.school, s.grade, s.session_id, s.created_at, 
-           r.scores, r.recommended_field, r.created_at as result_date
-    FROM students s
-    LEFT JOIN results r ON s.id = r.student_id
-    ORDER BY s.created_at DESC
-  `);
-  if (!result.length) return res.json([]);
-  
-  const students = result[0].values.map(row => ({
-    id: row[0],
-    name: row[1],
-    school: row[2],
-    grade: row[3],
-    session_id: row[4],
-    created_at: row[5],
-    scores: row[6] ? JSON.parse(row[6]) : null,
-    recommended_field: row[7] ? JSON.parse(row[7]) : null,
-    result_date: row[8]
-  }));
-  res.json(students);
+  try {
+    const result = db.exec(`
+      SELECT s.id, s.name, s.school, s.grade, s.session_id, s.created_at, 
+             r.scores, r.recommended_field, r.created_at as result_date
+      FROM students s
+      LEFT JOIN results r ON s.id = r.student_id
+      ORDER BY s.created_at DESC
+    `);
+    if (!result.length) return res.json([]);
+    
+    const students = result[0].values.map(row => {
+      let scores = null;
+      let recommended_field = null;
+      try {
+        scores = row[6] ? JSON.parse(row[6]) : null;
+        recommended_field = row[7] ? JSON.parse(row[7]) : null;
+      } catch (e) {
+        console.error('Parse error:', e);
+      }
+      return {
+        id: row[0],
+        name: row[1],
+        school: row[2],
+        grade: row[3],
+        session_id: row[4],
+        created_at: row[5],
+        scores,
+        recommended_field,
+        result_date: row[8]
+      };
+    });
+    res.json(students);
+  } catch (err) {
+    console.error('Students API error:', err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
 });
 
 app.get('/api/students/:id', authenticate, (req, res) => {
