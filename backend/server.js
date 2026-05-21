@@ -397,7 +397,7 @@ app.post('/api/results', (req, res) => {
   
   const result_id = uuidv4();
   db.run('INSERT INTO results (id, student_id, scores, recommended_field) VALUES (?, ?, ?, ?)',
-    [result_id, student_id, JSON.stringify(typeScores), fieldMap[dominant]]);
+    [result_id, student_id, JSON.stringify(typeScores), JSON.stringify(fieldMap[dominant])]);
   
   saveDb();
   res.json({ session_id, student_id });
