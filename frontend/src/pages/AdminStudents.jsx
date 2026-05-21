@@ -4,6 +4,12 @@ import { useAuth } from '../context/AuthContext'
 
 const typeLabels = { R: '實用型', I: '研究型', A: '藝術型', S: '社會型', E: '企業型', C: '事務型' }
 
+const formatField = (field) => {
+  if (!field) return '-';
+  if (typeof field === 'string') return field;
+  return field.zh || field.en || '-';
+}
+
 export default function AdminStudents() {
   const { token } = useAuth()
   const [students, setStudents] = useState([])
@@ -129,7 +135,7 @@ export default function AdminStudents() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
-                      {s.recommended_field || '-'}
+                      {formatField(s.recommended_field)}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button 
