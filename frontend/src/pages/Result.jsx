@@ -194,7 +194,12 @@ export default function Result() {
             </div>
           </div>
           <p className="text-blue-100 mb-4">{typeInfo[topType].desc[lang]}</p>
-          <p className="text-lg font-semibold">{t('result.recommendedField')}：{typeof data.recommended_field === 'object' ? data.recommended_field[lang] || data.recommended_field.zh : data.recommended_field}</p>
+          <p className="text-lg font-semibold">{t('result.recommendedField')}：{(() => {
+            const field = typeof data.recommended_field === 'string' 
+              ? JSON.parse(data.recommended_field) 
+              : data.recommended_field;
+            return field[lang] || field.zh;
+          })()}</p>
         </div>
 
         {/* Recommended Fields */}

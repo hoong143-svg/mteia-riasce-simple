@@ -26,18 +26,21 @@ export function AuthProvider({ children }) {
   }, [token])
 
   const login = async (email, password) => {
+    console.log('Login attempt:', email);
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Login failed')
+    });
+    console.log('Response status:', res.status);
+    const data = await res.json();
+    console.log('Response data:', data);
+    if (!res.ok) throw new Error(data.error || 'Login failed');
     
-    localStorage.setItem('mteia_token', data.token)
-    setToken(data.token)
-    setUser(data.user)
-    return data
+    localStorage.setItem('mteia_token', data.token);
+    setToken(data.token);
+    setUser({ name: data.name, email: data.email });
+    return data;
   }
 
   const logout = () => {
