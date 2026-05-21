@@ -93,13 +93,18 @@ async function initDb() {
       FOREIGN KEY (question_id) REFERENCES questions(id)
     )`);
     
-    // Create default admin
+    // Create/update default admin
     const adminCheck = db.exec("SELECT id FROM users WHERE email = 'admin@mteia.org'");
     if (adminCheck.length === 0 || adminCheck[0].values.length === 0) {
-      const hash = bcrypt.hashSync('admin123', 10);
+      const hash = bcrypt.hashSync('orlando246', 10);
       db.run('INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?)', 
         [uuidv4(), 'admin@mteia.org', hash, '系統管理員']);
       console.log('Default admin created');
+    } else {
+      // Update existing admin password
+      const hash = bcrypt.hashSync('orlando246', 10);
+      db.run("UPDATE users SET password_hash = ? WHERE email = 'admin@mteia.org'", [hash]);
+      console.log('Admin password updated');
     }
     
     // Seed questions
