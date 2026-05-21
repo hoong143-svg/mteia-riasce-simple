@@ -246,7 +246,7 @@ app.get('/api/stats', authenticate, (req, res) => {
     totalResults: totalResults[0]?.values[0][0] || 0,
     totalQuestions: totalQuestions[0]?.values[0][0] || 0,
     fieldCounts: fieldDist.length > 0 ? fieldDist[0].values.map(row => ({
-      recommended_field: row[0],
+      recommended_field: row[0] ? JSON.parse(row[0]).zh || row[0] : '',
       count: row[1]
     })) : []
   };
@@ -301,7 +301,13 @@ app.delete('/api/questions/:id', authenticate, (req, res) => {
 app.get('/api/students', authenticate, (req, res) => {
   if (!db) return res.status(500).json({ error: 'Database not ready' });
   
-  const result = db.exec('SELECT * FROM students ORDER BY created_at DESC');
+  const result = db.exec(`
+    SELECT s.id, s.name, s.school, s.grade, s.session_id, s.created_at, 
+           r.scores, r.recommended_field, r.created_at as result_date
+    FROM students s
+    LEFT JOIN results r ON s.id = r.student_id
+    ORDER BY s.created_at DESC
+  `);
   if (!result.length) return res.json([]);
   
   const students = result[0].values.map(row => ({
@@ -310,7 +316,10 @@ app.get('/api/students', authenticate, (req, res) => {
     school: row[2],
     grade: row[3],
     session_id: row[4],
-    created_at: row[5]
+    created_at: row[5],
+    scores: row[6] ? JSON.parse(row[6]) : null,
+    recommended_field: row[7] ? JSON.parse(row[7]) : null,
+    result_date: row[8]
   }));
   res.json(students);
 });
